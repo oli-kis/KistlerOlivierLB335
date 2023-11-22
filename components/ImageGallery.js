@@ -69,7 +69,7 @@ export default function ImageGallery(){
       const parsedLocations = storedLocations ? JSON.parse(storedLocations) : [];
       setLocations(parsedLocations);
 
-      const datesArray = parsedLocations.map(location => {
+      const datesArray = locations.map(location => {
         const imageDate = new Date(location.timestamp);
 
         const day = String(imageDate.getDate()).padStart(2, '0');
@@ -85,19 +85,25 @@ export default function ImageGallery(){
       });
       setDates(datesArray);
 
-      const fetchPromises = parsedLocations.map(location =>
-        fetch(`https://api.geoapify.com/v1/geocode/reverse?lat=${location.coords.latitude}&lon=${location.coords.longitude}&apiKey=YOUR_API_KEY`)
+      const fetchPromises = locations.map(location =>
+        fetch(`https://api.geoapify.com/v1/geocode/reverse?lat=${location.coords.latitude}&lon=${location.coords.longitude}&apiKey=ef258a4f141b44d9adad0793a35c674a`)
           .then(response => response.json())
           .then(result => {
+            console.log("result");
+            console.log("result");
+            console.log("result");
+            console.log(result.features[0].properties);
             const ImageAddress = result.features[0].properties.address_line1;
             const ImagePlace = result.features[0].properties.address_line2;
-            return { address: ImageAddress, place: ImagePlace };
+            return  {address: ImageAddress, place: ImagePlace};
           })
           .catch(error => console.log('error', error))
       );
 
       const newConvertedLocations = await Promise.all(fetchPromises);
       setConvertedLocations(newConvertedLocations);
+      console.log("Location");
+      console.log("Location");
       console.log(newConvertedLocations);
     } catch (e) {
       console.error('Failed to fetch locations:', e);
@@ -118,7 +124,7 @@ async function ClearLocations(){ AsyncStorage.setItem("locations", "")};
           </TouchableOpacity>
           <Image key={`image-${index}`} source={{ uri: image }} style={styles.image} />
           <Button key={`audio-${index}`} onPress={() => audios[index].sound.replayAsync()} title="Play Audio"></Button>
-          {/*<ImageModal imageModalVisible={imageModalVisible} toggleImageModal={toggleImageModal} time={dates[index]} address={convertedLocations[index].LocationObject.address} place={convertedLocations[index].LocationObject.place}></ImageModal>*/}
+          <ImageModal imageModalVisible={imageModalVisible} toggleImageModal={toggleImageModal} time={dates[index]} address={convertedLocations[index].address} place={convertedLocations[index].place}></ImageModal>
         </View>
       ))}
     </ScrollView>
