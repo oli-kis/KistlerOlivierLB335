@@ -115,7 +115,7 @@ async function ClearLocations(){ AsyncStorage.setItem("locations", "")};
 
   return (
     <View style={styles.container}>
-    <ScrollView contentContainerStyle={styles.galleryContainer}>
+    {/*<ScrollView contentContainerStyle={styles.galleryContainer}>
       {images.map((image, index) => (
         console.log("Image", image, "Audio", audios[index], "Date", dates[index], "Location", convertedLocations[index]),
         <View key={`item-${index}`} style={styles.imageContainer}>
@@ -127,7 +127,8 @@ async function ClearLocations(){ AsyncStorage.setItem("locations", "")};
           <ImageModal imageModalVisible={imageModalVisible} toggleImageModal={toggleImageModal} time={dates[index]} address={convertedLocations[index].address} place={convertedLocations[index].place}></ImageModal>
         </View>
       ))}
-    </ScrollView>
+      </ScrollView>*/}
+      <Text>Dies ist ein Test</Text>
     </View>
   );
   }
