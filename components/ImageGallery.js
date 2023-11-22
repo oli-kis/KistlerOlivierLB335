@@ -5,25 +5,36 @@ import {
     Image,
     Text,
     Dimensions,
-    Button
+    Button,
+    TouchableOpacity
   } from "react-native";
   import React, { useState, useEffect } from 'react';
   import AsyncStorage from '@react-native-async-storage/async-storage';
   import { Audio } from 'expo-av';
+  import ImageModal from "./ImageModal";
 
   const dimensions = Dimensions.get('window');
   const imageHeight = Math.round(dimensions.width * 9 / 16);
   const imageWidth = dimensions.width*0.9;
+  const infoMargin = dimensions.width-imageWidth; 
   
 export default function ImageGallery(){
     const [images, setImages] = useState([]);
-    const [audios, setAudios] = React.useState([]);
+    const [audios, setAudios] = useState([]);
+    const [locations, setLocations] = useState([]);
+    const [convertedLocations, setConvertedLocations] = useState([]);
+    const [dates, setDates] = useState([]);
+    const [imageModalVisible, setImageModalVisible] = useState(false);
 
   useEffect(() => {
     fetchImages();
     fetchAudios();
+    fetchLocations();
   }, []);
 
+  function toggleImageModal(){
+    setImageModalVisible(!imageModalVisible);
+  }
   const fetchImages = async () => {
     try {
       const storedImages = await AsyncStorage.getItem('images');
@@ -52,27 +63,62 @@ export default function ImageGallery(){
     }
   };
 
-  function getRecordingLines() {
-    return audios.map((recordingLine, index) => {
-      return (
-        <View key={index} style={styles.row}>
-          {/*<Text style={styles.fill}>
-            Recording #{index + 1} | {recordingLine.duration}
-      </Text>*/}
-          <Button onPress={() => recordingLine.sound.replayAsync()} title="Play Audio"></Button>
-        </View>
+  const fetchLocations = async () => {
+    try {
+      const storedLocations = await AsyncStorage.getItem('locations');
+      const parsedLocations = storedLocations ? JSON.parse(storedLocations) : [];
+      setLocations(parsedLocations);
+
+      const datesArray = parsedLocations.map(location => {
+        const imageDate = new Date(location.timestamp);
+
+        const day = String(imageDate.getDate()).padStart(2, '0');
+        const month = String(imageDate.getMonth() + 1).padStart(2, '0');
+        const year = imageDate.getFullYear();
+      
+        const hours = String(imageDate.getHours()).padStart(2, '0');
+        const minutes = String(imageDate.getMinutes()).padStart(2, '0');
+        const seconds = String(imageDate.getSeconds()).padStart(2, '0');
+      
+        const formattedImageDate = `${day}/${month}/${year} ${hours}:${minutes}:${seconds}`;
+        return formattedImageDate;
+      });
+      setDates(datesArray);
+
+      const fetchPromises = parsedLocations.map(location =>
+        fetch(`https://api.geoapify.com/v1/geocode/reverse?lat=${location.coords.latitude}&lon=${location.coords.longitude}&apiKey=YOUR_API_KEY`)
+          .then(response => response.json())
+          .then(result => {
+            const ImageAddress = result.features[0].properties.address_line1;
+            const ImagePlace = result.features[0].properties.address_line2;
+            return { address: ImageAddress, place: ImagePlace };
+          })
+          .catch(error => console.log('error', error))
       );
-    });
-  }
+
+      const newConvertedLocations = await Promise.all(fetchPromises);
+      setConvertedLocations(newConvertedLocations);
+      console.log(newConvertedLocations);
+    } catch (e) {
+      console.error('Failed to fetch locations:', e);
+    }
+  };
 async function ClearImages(){ AsyncStorage.setItem("images", "")};
 async function ClearAudios(){ AsyncStorage.setItem("audios", "")};
+async function ClearLocations(){ AsyncStorage.setItem("locations", "")};
+
   return (
     <View style={styles.container}>
     <ScrollView contentContainerStyle={styles.galleryContainer}>
       {images.map((image, index) => (
-        <View>
-        <Image key={`image-${index}`}source={{ uri: image }} style={styles.image} />
-        <Button key={`audio-${index}`} onPress={() => audios[index].sound.replayAsync()} title="Play Audio"></Button>
+        console.log("Image", image, "Audio", audios[index], "Date", dates[index], "Location", convertedLocations[index]),
+        <View key={`item-${index}`} style={styles.imageContainer}>
+          <TouchableOpacity key={`opacity-${index}`} onPress={toggleImageModal}>
+            <Image style={styles.info} source={require("../assets/info.png")}></Image>
+          </TouchableOpacity>
+          <Image key={`image-${index}`} source={{ uri: image }} style={styles.image} />
+          <Button key={`audio-${index}`} onPress={() => audios[index].sound.replayAsync()} title="Play Audio"></Button>
+          {/*<ImageModal imageModalVisible={imageModalVisible} toggleImageModal={toggleImageModal} time={dates[index]} address={convertedLocations[index].LocationObject.address} place={convertedLocations[index].LocationObject.place}></ImageModal>*/}
         </View>
       ))}
     </ScrollView>
@@ -91,11 +137,19 @@ async function ClearAudios(){ AsyncStorage.setItem("audios", "")};
         width: "100%",
         marginVertical: 20,
       },
+      imageContainer:{
+        marginVertical: 20,
+      },
       image: {
        width: imageWidth,
         height: imageHeight,
-        marginVertical: 10,
         resizeMode: "contain"
       },
+      info:{
+        tintColor: "#fff",
+        width: 40,
+        height: 40,
+        marginLeft: infoMargin,
+      }
     });
     

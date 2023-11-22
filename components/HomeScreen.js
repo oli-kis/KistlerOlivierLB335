@@ -12,6 +12,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import CameraContainer from "./CameraContainer";
 import ButtonContainer from "./ButtonContainer";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as Location from 'expo-location';
 
 
 export default function HomeScreen({navigation}) {
@@ -28,6 +29,26 @@ export default function HomeScreen({navigation}) {
     })();
   }, []);
 
+  const saveUserLocation = async () => {
+    try {
+      let { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        console.error('Permission to access location was denied');
+        return;
+      }
+      const location = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced});
+      const storedLocations = await AsyncStorage.getItem("locations");
+      const locationList = storedLocations ? JSON.parse(storedLocations) : [];
+      locationList.push(location);
+      console.log(locationList);
+      await AsyncStorage.setItem('locations', JSON.stringify(locationList));
+      console.log("Location saved");
+    } catch (error) {
+      console.error('Error saving location:', error);
+    }
+  };
+
+
   const takePicture = async () => {
     if (cameraRef.current) {
       const photo = await cameraRef.current.takePictureAsync();
@@ -41,6 +62,7 @@ export default function HomeScreen({navigation}) {
         imageList.push(photo.uri);
   
         await AsyncStorage.setItem('images', JSON.stringify(imageList));
+        await saveUserLocation();
       } catch (e) {
         console.error('Failed to save image:', e);
       }

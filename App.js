@@ -1,10 +1,6 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState } from "react";
 import {
   StyleSheet,
-  Text,
-  View,
-  SafeAreaView,
-  Image,
 } from "react-native";
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
@@ -18,9 +14,9 @@ export default function App() {
   return(
     <NavigationContainer>
       <Stack.Navigator initialRouteName="BeFake">
-        <Stack.Screen name="BeFake" component={HomeScreen} />
+        <Stack.Screen name="BeFake" component={HomeScreen}/>
         <Stack.Screen name="Gallery" component={ImageGallery} />
-        <Stack.Screen name="Audio Recording" component={AudioRecorder} />
+        <Stack.Screen name="Audio Recording" component={AudioRecorder}/>
       </Stack.Navigator>
     </NavigationContainer>
   )
