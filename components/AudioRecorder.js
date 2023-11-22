@@ -3,7 +3,7 @@ import { StyleSheet, Text, View, Button, Image } from 'react-native';
 import { Audio } from 'expo-av';
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
-export default function AudioRecorder() {
+export default function AudioRecorder({navigation}) {
   const [recording, setRecording] = React.useState();
   const [audios, setAudios] = React.useState([]);
 
@@ -40,6 +40,8 @@ export default function AudioRecorder() {
       await AsyncStorage.setItem('audios', JSON.stringify(audioList));
   
       setAudios([...audios, newRecording]);
+
+      navigation.navigate("Gallery");
     } catch (e) {
       console.error('Failed to save audio:', e);
     }
@@ -53,13 +55,11 @@ export default function AudioRecorder() {
   }
 
   useEffect(() => {
-    // Function to automatically start recording
     const startAutoRecording = async () => {
       await startRecording();
     };
 
     startAutoRecording();
-    fetchAudios();
   }, []);
 
   useEffect(() => {
@@ -111,9 +111,12 @@ export default function AudioRecorder() {
 
   return (
     <View style={styles.container}>
+      <Image source={require("../assets/mic.png")} style={styles.mic}></Image>
+      <Text style={styles.recordingText}>Audio is recording...</Text>
+      {/*
       <Button title={recording ? 'Stop Recording' : 'Start Recording\n\n\n'} onPress={recording ? stopRecording : startRecording} />
       {getRecordingLines()}
-      <Button title={audios.length > 0 ? '\n\n\nClear Recordings' : ''} onPress={clearRecordings} />
+  <Button title={audios.length > 0 ? '\n\n\nClear Recordings' : ''} onPress={clearRecordings} />*/}
     </View>
   );
 }
@@ -136,5 +139,16 @@ const styles = StyleSheet.create({
     flex: 1,
     margin: 15,
     color: "#fff"
+  },
+  mic:{
+    width: 80,
+    height: 80,
+    tintColor: "#fff",
+  },
+  recordingText:{
+    color: "#fff",
+    fontSize: 25,
+    marginTop: 30,
   }
+
 });
