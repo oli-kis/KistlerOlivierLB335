@@ -25,17 +25,26 @@ export default function ImageGallery(){
     const [convertedLocations, setConvertedLocations] = useState([]);
     const [dates, setDates] = useState([]);
     const [imageModalVisible, setImageModalVisible] = useState(false);
+    const [isDataLoaded, setIsDataLoaded] = useState(false);
+    const [selectedImageIndex, setSelectedImageIndex] = useState(null);
+
+const handleImagePress = (index) => {
+  setSelectedImageIndex(index);
+  toggleImageModal();
+};
 
   useEffect(() => {
-    fetchImages();
-    fetchAudios();
-    fetchLocations();
-  }, []);
+    async function fetchData() {
+      await Promise.all([fetchImages(), fetchAudios(), fetchLocations()]);
+      setIsDataLoaded(true);
+    }
 
-  function toggleImageModal(){
-    setImageModalVisible(!imageModalVisible);
-  }
-  const fetchImages = async () => {
+    fetchData();
+  }, []);
+  useEffect(() => {
+  }, [images, audios, locations, convertedLocations, dates]);
+
+   async function fetchImages () {
     try {
       const storedImages = await AsyncStorage.getItem('images');
       const parsedImages = storedImages ? JSON.parse(storedImages) : [];
@@ -45,7 +54,7 @@ export default function ImageGallery(){
     }
   };
 
-  const fetchAudios = async () => {
+  async function fetchAudios() {
     try {
       const storedAudios = await AsyncStorage.getItem('audios');
       if (storedAudios) {
@@ -63,72 +72,76 @@ export default function ImageGallery(){
     }
   };
 
-  const fetchLocations = async () => {
+  async function fetchLocations ()  {
     try {
       const storedLocations = await AsyncStorage.getItem('locations');
       const parsedLocations = storedLocations ? JSON.parse(storedLocations) : [];
       setLocations(parsedLocations);
 
-      const datesArray = locations.map(location => {
-        const imageDate = new Date(location.timestamp);
-
-        const day = String(imageDate.getDate()).padStart(2, '0');
-        const month = String(imageDate.getMonth() + 1).padStart(2, '0');
-        const year = imageDate.getFullYear();
-      
-        const hours = String(imageDate.getHours()).padStart(2, '0');
-        const minutes = String(imageDate.getMinutes()).padStart(2, '0');
-        const seconds = String(imageDate.getSeconds()).padStart(2, '0');
-      
-        const formattedImageDate = `${day}/${month}/${year} ${hours}:${minutes}:${seconds}`;
-        return formattedImageDate;
+      const timestamps = await AsyncStorage.getItem("timestamps");
+      const parsedTimestamps = timestamps ? JSON.parse(timestamps) : [];
+      const datesArray = parsedTimestamps.map(timestamp => {
+        return timestamp;
       });
       setDates(datesArray);
 
-      const fetchPromises = locations.map(location =>
-        fetch(`https://api.geoapify.com/v1/geocode/reverse?lat=${location.coords.latitude}&lon=${location.coords.longitude}&apiKey=ef258a4f141b44d9adad0793a35c674a`)
-          .then(response => response.json())
-          .then(result => {
-            console.log("result");
-            console.log("result");
-            console.log("result");
-            console.log(result.features[0].properties);
-            const ImageAddress = result.features[0].properties.address_line1;
-            const ImagePlace = result.features[0].properties.address_line2;
-            return  {address: ImageAddress, place: ImagePlace};
-          })
-          .catch(error => console.log('error', error))
-      );
-
-      const newConvertedLocations = await Promise.all(fetchPromises);
+      const newConvertedLocations = await Promise.all(parsedLocations.map(async location => {
+        try {
+          const response = await fetch(`https://api.geoapify.com/v1/geocode/reverse?lat=${location.latitude}&lon=${location.longitude}&apiKey=ef258a4f141b44d9adad0793a35c674a`);
+          const result = await response.json();
+          const properties = result.features[0].properties;
+          return { address: properties.address_line1, place: properties.address_line2 };
+        } catch (error) {
+          console.error('Error fetching location:', error);
+          return { address: 'Unknown', place: 'Unknown' };
+        }
+      }));
       setConvertedLocations(newConvertedLocations);
-      console.log("Location");
-      console.log("Location");
-      console.log(newConvertedLocations);
     } catch (e) {
       console.error('Failed to fetch locations:', e);
     }
   };
-async function ClearImages(){ AsyncStorage.setItem("images", "")};
-async function ClearAudios(){ AsyncStorage.setItem("audios", "")};
-async function ClearLocations(){ AsyncStorage.setItem("locations", "")};
+
+  function toggleImageModal(){
+    setImageModalVisible(!imageModalVisible);
+  }
+
+async function ClearImages(){ AsyncStorage.removeItem("images")};
+async function ClearAudios(){ AsyncStorage.removeItem("audios")};
+async function ClearLocations(){ AsyncStorage.removeItem("locations")};
+{/*
+ClearImages();
+ClearAudios();
+ClearLocations();*/}
+
+if (!isDataLoaded) {
+  return <View style={styles.container}>
+           <Text>Loading daa...</Text>
+         </View>;
+}
 
   return (
-    <View style={styles.container}>
-    {/*<ScrollView contentContainerStyle={styles.galleryContainer}>
+    <View style={styles.container}> 
+    <ScrollView contentContainerStyle={styles.galleryContainer}>
       {images.map((image, index) => (
-        console.log("Image", image, "Audio", audios[index], "Date", dates[index], "Location", convertedLocations[index]),
         <View key={`item-${index}`} style={styles.imageContainer}>
-          <TouchableOpacity key={`opacity-${index}`} onPress={toggleImageModal}>
+          <TouchableOpacity key={`opacity-${index}`} onPress={() => handleImagePress(index)}>
             <Image style={styles.info} source={require("../assets/info.png")}></Image>
           </TouchableOpacity>
           <Image key={`image-${index}`} source={{ uri: image }} style={styles.image} />
-          <Button key={`audio-${index}`} onPress={() => audios[index].sound.replayAsync()} title="Play Audio"></Button>
-          <ImageModal imageModalVisible={imageModalVisible} toggleImageModal={toggleImageModal} time={dates[index]} address={convertedLocations[index].address} place={convertedLocations[index].place}></ImageModal>
+          <Button key={`audio-${index}`} onPress={() => audios[index].sound.playAsync()} title="Play Audio"></Button>
+          {selectedImageIndex !== null && (
+          <ImageModal
+            imageModalVisible={imageModalVisible}
+            toggleImageModal={toggleImageModal}
+            time={dates[selectedImageIndex]}
+            address={convertedLocations[selectedImageIndex].address}
+            place={convertedLocations[selectedImageIndex].place}
+          />
+        )}
         </View>
       ))}
-      </ScrollView>*/}
-      <Text>Dies ist ein Test</Text>
+      </ScrollView>
     </View>
   );
   }

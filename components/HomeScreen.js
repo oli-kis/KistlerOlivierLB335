@@ -13,7 +13,7 @@ import CameraContainer from "./CameraContainer";
 import ButtonContainer from "./ButtonContainer";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Location from 'expo-location';
-
+import moment from 'moment'; 
 
 export default function HomeScreen({navigation}) {
   const [hasPermission, setHasPermission] = useState(null);
@@ -39,7 +39,7 @@ export default function HomeScreen({navigation}) {
       const location = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced});
       const storedLocations = await AsyncStorage.getItem("locations");
       const locationList = storedLocations ? JSON.parse(storedLocations) : [];
-      locationList.push(location);
+      locationList.push({longitude: location.coords.longitude, latitude: location.coords.latitude, timestamp: location.timestamp});
       console.log(locationList);
       await AsyncStorage.setItem('locations', JSON.stringify(locationList));
       console.log("Location saved");
@@ -48,21 +48,36 @@ export default function HomeScreen({navigation}) {
     }
   };
 
+  const saveTimestamp = async () => {
+    try {
+      const currentDate = moment().format("DD/MM/YYYY, h:mm:ss");
+      const storedTimestamps = await AsyncStorage.getItem("timestamps");
+      const timestampList = storedTimestamps ? JSON.parse(storedTimestamps) : [];
+      timestampList.push(currentDate);
+      console.log(timestampList);
+      await AsyncStorage.setItem('timestamps', JSON.stringify(timestampList));
+      console.log("Timestamp saved");
+    } catch (error) {
+      console.error('Error saving location:', error);
+    }
+  };
+
+  
+
 
   const takePicture = async () => {
     if (cameraRef.current) {
       const photo = await cameraRef.current.takePictureAsync();
       setPhotoUri(photo.uri); 
-      console.log("photo", photo.uri);
       
       try {
         const storedImages = await AsyncStorage.getItem('images');
         const imageList = storedImages ? JSON.parse(storedImages) : [];
   
         imageList.push(photo.uri);
-  
         await AsyncStorage.setItem('images', JSON.stringify(imageList));
         await saveUserLocation();
+        await saveTimestamp();
       } catch (e) {
         console.error('Failed to save image:', e);
       }
