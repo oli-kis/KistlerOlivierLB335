@@ -15,9 +15,24 @@ import ImageModal from "./ImageModal";
 import AudioController from "./AudioController";
 import ImageController from "./ImageController";
 
-const dimensions = Dimensions.get("window");
-const imageHeight = Math.round((dimensions.width * 9) / 16);
-const imageWidth = dimensions.width * 0.9;
+const getImageDimensions = () => {
+  const window = Dimensions.get("window");
+  const screen = Dimensions.get("screen");
+  
+  const isPortrait = window.height > window.width;
+  const maxWidth = isPortrait ? window.width : screen.width / 1.1;
+  const maxHeight = window.height * 1;
+
+  let width = maxWidth;
+  let height = (width * 9) / 16;
+
+  if (height > maxHeight) {
+    height = maxHeight;
+    width = (height * 16) / 9;
+  }
+
+  return { width, height };
+};
 
 export default function ImageGallery() {
   const [images, setImages] = useState([]);
@@ -30,6 +45,16 @@ export default function ImageGallery() {
   const [selectedImageIndex, setSelectedImageIndex] = useState(null);
   const [weatherList, setWeatherList] = useState([]);
   const [playbackStatuses, setPlaybackStatuses] = useState({});
+  const [imageDimensions, setImageDimensions] = useState(getImageDimensions());
+
+  useEffect(() => {
+    const subscription = Dimensions.addEventListener("change", () => {
+      setImageDimensions(getImageDimensions());
+    });
+    return () => {
+      subscription.remove();
+    };
+  }, []);
 
   const handleImagePress = (index) => {
     setSelectedImageIndex(index);
@@ -312,8 +337,8 @@ const styles = StyleSheet.create({
     marginVertical: 20,
   },
   image: {
-    width: imageWidth,
-    height: imageHeight,
+    width: 400,
+    height: 400/16*9,
     resizeMode: "contain",
   },
 });
