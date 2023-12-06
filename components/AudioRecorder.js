@@ -72,42 +72,7 @@ export default function AudioRecorder({navigation}) {
     return () => clearTimeout(timer);
   }, [recording]);
   
-  const fetchAudios = async () => {
-    try {
-      const storedAudios = await AsyncStorage.getItem('audios');
-      if (storedAudios) {
-        const parsedAudios = JSON.parse(storedAudios);
-        const updatedAudios = await Promise.all(parsedAudios.map(async (audio) => {
-          const { sound } = await Audio.Sound.createAsync({ uri: audio.file });
-          return { ...audio, sound };
-        }));
-        setAudios(updatedAudios);
-      } else {
-        setAudios([]);
-      }
-    } catch (e) {
-      console.error('Failed to fetch audios:', e);
-    }
-  };
 
-  function getRecordingLines() {
-    return audios.map((recordingLine, index) => {
-      return (
-        <View key={index} style={styles.row}>
-          <Text style={styles.fill}>
-            Recording #{index + 1} | {recordingLine.duration}
-          </Text>
-          <Button onPress={() => recordingLine.sound.replayAsync()} title="Play"></Button>
-        </View>
-      );
-    });
-  }
-
-  async function clearRecordings() {
-    return (
-        await AsyncStorage.setItem("audios", "").then(
-        setAudios([])))
-  }
 
   return (
     <View style={styles.container}>

@@ -26,11 +26,11 @@ export default function ImageModal(props){
       >
         <View style={styles.centeredView}>
           <View style={styles.modalView}>
-            <Text style={styles.modalText}>Login</Text>
+            <Text style={styles.modalText}>Bild Info</Text>
             <Text>Zeit: {props.time}</Text>
             <Text>Ort: {props.place}</Text>
             <Text>Adresse: {props.address}</Text>
-            <Text>Wetter:</Text>
+            <Text>Wetter: {props.weather}</Text>
             <Pressable
               style={[styles.button, styles.buttonClose]}
               onPress={() => props.toggleImageModal()}

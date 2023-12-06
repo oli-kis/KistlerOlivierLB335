@@ -16,7 +16,6 @@ import {
   const dimensions = Dimensions.get('window');
   const imageHeight = Math.round(dimensions.width * 9 / 16);
   const imageWidth = dimensions.width*0.9;
-  const infoMargin = dimensions.width-imageWidth; 
   
 export default function ImageGallery(){
     const [images, setImages] = useState([]);
@@ -27,15 +26,42 @@ export default function ImageGallery(){
     const [imageModalVisible, setImageModalVisible] = useState(false);
     const [isDataLoaded, setIsDataLoaded] = useState(false);
     const [selectedImageIndex, setSelectedImageIndex] = useState(null);
+    const [weatherList, setWeatherList] = useState([]);
 
 const handleImagePress = (index) => {
   setSelectedImageIndex(index);
   toggleImageModal();
 };
+const handleImageDelete = async (index) =>{
+const storedImages = await AsyncStorage.getItem("images");
+const images = storedImages ? JSON.parse(storedImages) : [];
+images.splice(index, 1);
+await AsyncStorage.setItem("images", JSON.stringify(images));
+
+const storedAudios = await AsyncStorage.getItem("audios");
+const audiosDelete = storedAudios ? JSON.parse(storedAudios) : [];
+audiosDelete.splice(index, 1);
+await AsyncStorage.setItem("audios", JSON.stringify(audiosDelete));
+
+const storedTimestamps = await AsyncStorage.getItem("timestamps");
+const timestamps = storedTimestamps ? JSON.parse(storedTimestamps) : [];
+timestamps.splice(index, 1);
+await AsyncStorage.setItem("timestamps", JSON.stringify(timestamps));
+
+const storedLocations= await AsyncStorage.getItem("locations");
+const locations = storedLocations ? JSON.parse(storedLocations) : [];
+locations.splice(index, 1);
+await AsyncStorage.setItem("locations", JSON.stringify(locations));
+
+const storedWeather= await AsyncStorage.getItem("weather");
+const weather = storedWeather ? JSON.parse(storedWeather) : [];
+weather.splice(index, 1);
+await AsyncStorage.setItem("weather", JSON.stringify(weather));
+}
 
   useEffect(() => {
     async function fetchData() {
-      await Promise.all([fetchImages(), fetchAudios(), fetchLocations()]);
+      await Promise.all([fetchImages(), fetchAudios(), fetchLocations(), fetchWeather()]);
       setIsDataLoaded(true);
     }
 
@@ -54,14 +80,36 @@ const handleImagePress = (index) => {
     }
   };
 
+  async function fetchWeather(){
+    try {
+      const storedWeather = await AsyncStorage.getItem('weather');
+      if (storedWeather) {
+        const parsedWeather = JSON.parse(storedWeather);
+        setWeatherList(parsedWeather);
+      } else {
+        setWeatherList([]);
+      }
+    } catch (e) {
+      console.error('Failed to fetch Weather:', e);
+    }
+  }
+
   async function fetchAudios() {
     try {
       const storedAudios = await AsyncStorage.getItem('audios');
       if (storedAudios) {
         const parsedAudios = JSON.parse(storedAudios);
         const updatedAudios = await Promise.all(parsedAudios.map(async (audio) => {
-          const { sound } = await Audio.Sound.createAsync({ uri: audio.file });
-          return { ...audio, sound };
+          try {
+            await Audio.setAudioModeAsync({
+              playsInSilentModeIOS: true
+            });
+            const { sound } = await Audio.Sound.createAsync({ uri: audio.file });
+            return { ...audio, sound };
+          } catch (error) {
+            console.error('Error loading audio:', error);
+            return { ...audio, sound: null }; // Handle error, maybe set sound to null
+          }
         }));
         setAudios(updatedAudios);
       } else {
@@ -109,14 +157,18 @@ const handleImagePress = (index) => {
 async function ClearImages(){ AsyncStorage.removeItem("images")};
 async function ClearAudios(){ AsyncStorage.removeItem("audios")};
 async function ClearLocations(){ AsyncStorage.removeItem("locations")};
+async function ClearTimestamps(){ AsyncStorage.removeItem("timestamps")};
+async function ClearWeather(){ AsyncStorage.removeItem("weather")};
 {/*
 ClearImages();
 ClearAudios();
-ClearLocations();*/}
+ClearLocations();
+ClearTimestamps();
+ClearWeather();*/}
 
 if (!isDataLoaded) {
   return <View style={styles.container}>
-           <Text>Loading daa...</Text>
+           <Text>Loading data...</Text>
          </View>;
 }
 
@@ -125,9 +177,14 @@ if (!isDataLoaded) {
     <ScrollView contentContainerStyle={styles.galleryContainer}>
       {images.map((image, index) => (
         <View key={`item-${index}`} style={styles.imageContainer}>
+          <View style={styles.imageControlls}>
           <TouchableOpacity key={`opacity-${index}`} onPress={() => handleImagePress(index)}>
             <Image style={styles.info} source={require("../assets/info.png")}></Image>
           </TouchableOpacity>
+          <TouchableOpacity key={`delete-${index}`} onPress={() => handleImageDelete(index)}>
+            <Image style={styles.delete} source={require("../assets/delete.png")}></Image>
+          </TouchableOpacity>
+          </View>
           <Image key={`image-${index}`} source={{ uri: image }} style={styles.image} />
           <Button key={`audio-${index}`} onPress={() => audios[index].sound.playAsync()} title="Play Audio"></Button>
           {selectedImageIndex !== null && (
@@ -137,6 +194,7 @@ if (!isDataLoaded) {
             time={dates[selectedImageIndex]}
             address={convertedLocations[selectedImageIndex].address}
             place={convertedLocations[selectedImageIndex].place}
+            weather={weatherList[selectedImageIndex]}
           />
         )}
         </View>
@@ -169,7 +227,16 @@ if (!isDataLoaded) {
         tintColor: "#fff",
         width: 40,
         height: 40,
-        marginLeft: infoMargin,
+      },
+      delete:{
+        tintColor: "#fff",
+        width: 40,
+        height: 40,
+      },
+      imageControlls:{
+        flexDirection: "row",
+        justifyContent: "space-around",
+        marginBottom: 10,
       }
     });
     

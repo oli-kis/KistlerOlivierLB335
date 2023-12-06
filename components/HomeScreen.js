@@ -21,6 +21,7 @@ export default function HomeScreen({navigation}) {
   const [flashMode, setFlashMode] = useState(Camera.Constants.FlashMode.off);
   const [photoUri, setPhotoUri] = useState(null); 
   const cameraRef = useRef(null);
+  const [location, setLocation] = useState(null);
 
   useEffect(() => {
     (async () => {
@@ -36,17 +37,30 @@ export default function HomeScreen({navigation}) {
         console.error('Permission to access location was denied');
         return;
       }
-      const location = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced});
+      const UserLocation = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced});
+      setLocation(UserLocation);
       const storedLocations = await AsyncStorage.getItem("locations");
       const locationList = storedLocations ? JSON.parse(storedLocations) : [];
-      locationList.push({longitude: location.coords.longitude, latitude: location.coords.latitude, timestamp: location.timestamp});
-      console.log(locationList);
+      locationList.push({longitude: UserLocation.coords.longitude, latitude: UserLocation.coords.latitude, timestamp: UserLocation.timestamp});
       await AsyncStorage.setItem('locations', JSON.stringify(locationList));
       console.log("Location saved");
+      return UserLocation;
     } catch (error) {
       console.error('Error saving location:', error);
     }
   };
+
+  const getCurrentWeather = async (location) => {
+    try {
+      const response = await fetch(`https://api.openweathermap.org/data/2.5/weather?lat=${location.coords.latitude}&lon=${location.coords.longitude}&appid=451d6c7864bb7b9046cbfec14e7ea0bc`);
+      const result = await response.json();
+      const weatherList = JSON.parse(await AsyncStorage.getItem("weather")) || [];
+      weatherList.push(result.weather[0].description);
+      await AsyncStorage.setItem("weather", JSON.stringify(weatherList));
+    } catch (error) {
+      console.error('Error fetching Weather:', error);
+    }
+  }
 
   const saveTimestamp = async () => {
     try {
@@ -54,16 +68,12 @@ export default function HomeScreen({navigation}) {
       const storedTimestamps = await AsyncStorage.getItem("timestamps");
       const timestampList = storedTimestamps ? JSON.parse(storedTimestamps) : [];
       timestampList.push(currentDate);
-      console.log(timestampList);
       await AsyncStorage.setItem('timestamps', JSON.stringify(timestampList));
       console.log("Timestamp saved");
     } catch (error) {
       console.error('Error saving location:', error);
     }
   };
-
-  
-
 
   const takePicture = async () => {
     if (cameraRef.current) {
@@ -76,8 +86,8 @@ export default function HomeScreen({navigation}) {
   
         imageList.push(photo.uri);
         await AsyncStorage.setItem('images', JSON.stringify(imageList));
-        await saveUserLocation();
         await saveTimestamp();
+        await getCurrentWeather(await saveUserLocation());
       } catch (e) {
         console.error('Failed to save image:', e);
       }
