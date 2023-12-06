@@ -12,8 +12,8 @@ import React, { useState, useEffect } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Audio } from "expo-av";
 import ImageModal from "./ImageModal";
-import Slider from "@react-native-community/slider";
 import AudioController from "./AudioController";
+import ImageController from "./ImageController";
 
 const dimensions = Dimensions.get("window");
 const imageHeight = Math.round((dimensions.width * 9) / 16);
@@ -254,30 +254,6 @@ export default function ImageGallery() {
     setImageModalVisible(!imageModalVisible);
   }
 
-  async function ClearImages() {
-    AsyncStorage.removeItem("images");
-  }
-  async function ClearAudios() {
-    AsyncStorage.removeItem("audios");
-  }
-  async function ClearLocations() {
-    AsyncStorage.removeItem("locations");
-  }
-  async function ClearTimestamps() {
-    AsyncStorage.removeItem("timestamps");
-  }
-  async function ClearWeather() {
-    AsyncStorage.removeItem("weather");
-  }
-  {
-    /*
-ClearImages();
-ClearAudios();
-ClearLocations();
-ClearTimestamps();
-ClearWeather();*/
-  }
-
   if (!isDataLoaded) {
     return (
       <View style={styles.container}>
@@ -291,32 +267,14 @@ ClearWeather();*/
       <ScrollView contentContainerStyle={styles.galleryContainer}>
         {images.map((image, index) => (
           <View key={`item-${index}`} style={styles.imageContainer}>
-            <View style={styles.imageControlls}>
-              <TouchableOpacity
-                key={`opacity-${index}`}
-                onPress={() => handleImagePress(index)}
-              >
-                <Image
-                  style={styles.info}
-                  source={require("../assets/info.png")}
-                ></Image>
-              </TouchableOpacity>
-              <TouchableOpacity
-                key={`delete-${index}`}
-                onPress={() => handleImageDelete(index)}
-              >
-                <Image
-                  style={styles.delete}
-                  source={require("../assets/delete.png")}
-                ></Image>
-              </TouchableOpacity>
-            </View>
+            <ImageController index={index} handleImageDelete={handleImageDelete} handleImagePress={handleImagePress}></ImageController>
             <Image
               key={`image-${index}`}
               source={{ uri: image }}
               style={styles.image}
             />
             <AudioController
+             key={`audio-${index}`}
             index={index}
             playbackStatuses={playbackStatuses}
             audios={audios}
@@ -358,30 +316,4 @@ const styles = StyleSheet.create({
     height: imageHeight,
     resizeMode: "contain",
   },
-  info: {
-    tintColor: "#fff",
-    width: 40,
-    height: 40,
-  },
-  delete: {
-    tintColor: "#fff",
-    width: 40,
-    height: 40,
-  },
-  imageControlls: {
-    flexDirection: "row",
-    justifyContent: "space-around",
-    marginBottom: 10,
-  },
-  playControlls:{
-    tintColor: "#fff",
-    width: 50,
-    height: 50,
-    alignItems: "center"
-  },
-  audioControlls:{
-    width: "100%",
-    alignItems: "center",
-    marginVertical: 20,
-  }
 });
