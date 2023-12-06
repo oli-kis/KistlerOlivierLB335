@@ -41,7 +41,7 @@ export default function AudioRecorder({navigation}) {
   
       setAudios([...audios, newRecording]);
 
-      navigation.navigate("Gallery");
+      navigation.replace('Gallery');
     } catch (e) {
       console.error('Failed to save audio:', e);
     }
@@ -78,10 +78,6 @@ export default function AudioRecorder({navigation}) {
     <View style={styles.container}>
       <Image source={require("../assets/mic.png")} style={styles.mic}></Image>
       <Text style={styles.recordingText}>Audio is recording...</Text>
-      {/*
-      <Button title={recording ? 'Stop Recording' : 'Start Recording\n\n\n'} onPress={recording ? stopRecording : startRecording} />
-      {getRecordingLines()}
-  <Button title={audios.length > 0 ? '\n\n\nClear Recordings' : ''} onPress={clearRecordings} />*/}
     </View>
   );
 }

@@ -13,7 +13,17 @@ const Stack = createNativeStackNavigator();
 export default function App() {
   return(
     <NavigationContainer>
-      <Stack.Navigator initialRouteName="BeFake">
+      <Stack.Navigator initialRouteName="BeFake" screenOptions={{
+          headerStyle: {
+            backgroundColor: '#000',
+            
+          },
+          headerTintColor: '#fff',
+          headerTitleStyle: {
+            fontWeight: 'bold',
+            fontSize: 40,
+          },
+        }}>
         <Stack.Screen name="BeFake" component={HomeScreen}/>
         <Stack.Screen name="Gallery" component={ImageGallery} />
         <Stack.Screen name="Audio Recording" component={AudioRecorder}/>
