@@ -1,34 +1,38 @@
 import React, { useState, useEffect, useRef } from "react";
-import {
-  StyleSheet,
-  Text,
-  View,
-  SafeAreaView,
-  Image,
-  TouchableOpacity
-} from "react-native";
+import { StyleSheet, Text, View, SafeAreaView, Image, TouchableOpacity } from "react-native";
 import { Camera } from "expo-camera";
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import CameraContainer from "./CameraContainer";
-import ButtonContainer from "./ButtonContainer";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Location from 'expo-location';
 import moment from 'moment'; 
+import CameraContainer from "./CameraContainer";
+import ButtonContainer from "./ButtonContainer";
+
+const FLASH_MODES = {
+  OFF: Camera.Constants.FlashMode.off,
+  TORCH: Camera.Constants.FlashMode.torch
+};
+
+const CAMERA_TYPES = {
+  BACK: Camera.Constants.Type.back,
+  FRONT: Camera.Constants.Type.front
+};
 
 export default function HomeScreen({navigation}) {
   const [hasPermission, setHasPermission] = useState(null);
-  const [type, setType] = useState(Camera.Constants.Type.back);
-  const [flashMode, setFlashMode] = useState(Camera.Constants.FlashMode.off);
+  const [type, setType] = useState(CAMERA_TYPES.BACK);
+  const [flashMode, setFlashMode] = useState(FLASH_MODES.OFF);
   const [photoUri, setPhotoUri] = useState(null); 
   const cameraRef = useRef(null);
   const [location, setLocation] = useState(null);
 
   useEffect(() => {
-    (async () => {
-      const { status } = await Camera.requestCameraPermissionsAsync();
-      setHasPermission(status === "granted");
-    })();
+    requestCameraPermission();
   }, []);
+
+  const requestCameraPermission = async () => {
+    const { status } = await Camera.requestCameraPermissionsAsync();
+    setHasPermission(status === "granted");
+  };
 
   const saveUserLocation = async () => {
     try {
@@ -96,18 +100,12 @@ export default function HomeScreen({navigation}) {
   };
 
   const toggleFlash = () => {
-    setFlashMode(
-      flashMode === Camera.Constants.FlashMode.off
-        ? Camera.Constants.FlashMode.torch
-        : Camera.Constants.FlashMode.off
-    );
+    setFlashMode(flashMode === FLASH_MODES.OFF ? FLASH_MODES.TORCH : FLASH_MODES.OFF);
   };
 
-  const toggleCameraType = () =>{
-    setType(type === Camera.Constants.Type.back
-        ? Camera.Constants.Type.front
-        : Camera.Constants.Type.back)
-  }
+  const toggleCameraType = () => {
+    setType(type === CAMERA_TYPES.BACK ? CAMERA_TYPES.FRONT : CAMERA_TYPES.BACK);
+  };
 
   if (hasPermission === null) {
     return <View />;
@@ -115,7 +113,6 @@ export default function HomeScreen({navigation}) {
   if (hasPermission === false) {
     return <Text>No access to camera</Text>;
   }
-
 
   return (
     <SafeAreaView style={styles.container}>

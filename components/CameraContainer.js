@@ -6,14 +6,14 @@ import {
 import { Camera } from "expo-camera";
 
 
-export default function CameraContainer(props){
+export default function CameraContainer({ type, reference, flashMode }){
     return(
     <View style={styles.cameraContainer}>
         <Camera
           style={styles.camera}
-          type={props.type}
-          ref={props.reference}
-          flashMode={props.flashMode}
+          type={type}
+          ref={reference}
+          flashMode={flashMode}
         />
       </View>)
 }

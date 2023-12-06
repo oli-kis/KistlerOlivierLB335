@@ -1,51 +1,28 @@
-import {
-    StyleSheet,
-    View,
-    Image,
-    TouchableOpacity,
-  } from "react-native";
-  import React, { useState, useEffect } from "react";
+import React from "react";
+import { StyleSheet, View, Image, TouchableOpacity } from "react-native";
 
-export default function ImageController(props){
-    const index = props.index;
-return(
-    <View style={styles.imageControlls}>
-              <TouchableOpacity
-                key={`opacity-${index}`}
-                onPress={() => props.handleImagePress(index)}
-              >
-                <Image
-                  style={styles.info}
-                  source={require("../assets/info.png")}
-                ></Image>
-              </TouchableOpacity>
-              <TouchableOpacity
-                key={`delete-${index}`}
-                onPress={() => props.handleImageDelete(index)}
-              >
-                <Image
-                  style={styles.delete}
-                  source={require("../assets/delete.png")}
-                ></Image>
-              </TouchableOpacity>
-            </View>
-)
+export default function ImageController({ index, handleImagePress, handleImageDelete }) {
+  return (
+    <View style={styles.imageControls}>
+      <TouchableOpacity onPress={() => handleImagePress(index)}>
+        <Image style={styles.icon} source={require("../assets/info.png")} />
+      </TouchableOpacity>
+      <TouchableOpacity onPress={() => handleImageDelete(index)}>
+        <Image style={styles.icon} source={require("../assets/delete.png")} />
+      </TouchableOpacity>
+    </View>
+  );
 }
 
 const styles = StyleSheet.create({
-    info: {
-      tintColor: "#fff",
-      width: 40,
-      height: 40,
-    },
-    delete: {
-      tintColor: "#fff",
-      width: 40,
-      height: 40,
-    },
-    imageControlls: {
-      flexDirection: "row",
-      justifyContent: "space-around",
-      marginBottom: 10,
-    },
-  });
+  icon: {
+    tintColor: "#fff",
+    width: 40,
+    height: 40,
+  },
+  imageControls: {
+    flexDirection: "row",
+    justifyContent: "space-around",
+    marginBottom: 10,
+  },
+});
