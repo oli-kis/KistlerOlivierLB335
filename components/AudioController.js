@@ -1,5 +1,6 @@
 import { StyleSheet, View, Image, TouchableOpacity } from "react-native";
 import Slider from "@react-native-community/slider";
+import {widthPercentageToDP as wp, heightPercentageToDP as hp} from 'react-native-responsive-screen';
 
 export default function AudioController(props) {
   const index = props.index;
@@ -19,7 +20,7 @@ export default function AudioController(props) {
       </TouchableOpacity>
 
       <Slider
-        style={{ width: "35%", height: 40 }}
+        style={{ width: wp("60%"), height: 40 }}
         minimumValue={0}
         maximumValue={playbackStatuses[index]?.duration || 0}
         value={

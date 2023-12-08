@@ -68,7 +68,7 @@ export default function HomeScreen({navigation}) {
 
   const saveTimestamp = async () => {
     try {
-      const currentDate = moment().format("DD/MM/YYYY, h:mm:ss");
+      const currentDate = moment().format("DD/MM/YYYY, HH:mm:ss");
       const storedTimestamps = await AsyncStorage.getItem("timestamps");
       const timestampList = storedTimestamps ? JSON.parse(storedTimestamps) : [];
       timestampList.push(currentDate);

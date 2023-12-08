@@ -14,6 +14,8 @@ import { Audio } from "expo-av";
 import ImageModal from "./ImageModal";
 import AudioController from "./AudioController";
 import ImageController from "./ImageController";
+import {widthPercentageToDP as wp, heightPercentageToDP as hp} from 'react-native-responsive-screen';
+
 
 const getImageDimensions = () => {
   const window = Dimensions.get("window");
@@ -330,15 +332,15 @@ const styles = StyleSheet.create({
   },
   galleryContainer: {
     height: "auto",
-    width: "100%",
+    width: wp("100%"),
     marginVertical: 20,
   },
   imageContainer: {
     marginVertical: 20,
   },
   image: {
-    width: 400,
-    height: 400/16*9,
+    width: wp("100%"),
+    minHeight: wp("100%"),
     resizeMode: "contain",
   },
 });
