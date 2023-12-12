@@ -70,7 +70,7 @@ export default function AudioRecorder({ navigation }) {
   return (
     <View style={styles.container}>
       <Image source={require("../assets/mic.png")} style={styles.mic} />
-      <Text style={styles.recordingText}>Audio is recording...</Text>
+      <Text style={styles.recordingText}>Audio is recording... Say something</Text>
     </View>
   );
 }

@@ -8,6 +8,7 @@ export default function ImageModal({ imageModalVisible, toggleImageModal, time, 
             transparent={true}
             visible={imageModalVisible}
             onRequestClose={toggleImageModal}
+            supportedOrientations={["portrait", "landscape"]}
         >
             <KeyboardAvoidingView
                 style={styles.centeredView}

@@ -6,6 +6,9 @@ import * as Location from 'expo-location';
 import moment from 'moment'; 
 import CameraContainer from "./CameraContainer";
 import ButtonContainer from "./ButtonContainer";
+import * as ScreenOrientation from 'expo-screen-orientation';
+import { useIsFocused } from '@react-navigation/native';
+
 
 const FLASH_MODES = {
   OFF: Camera.Constants.FlashMode.off,
@@ -24,6 +27,14 @@ export default function HomeScreen({navigation}) {
   const [photoUri, setPhotoUri] = useState(null); 
   const cameraRef = useRef(null);
   const [location, setLocation] = useState(null);
+  
+  const isFocused = useIsFocused();
+
+  useEffect(() => {
+    if (isFocused) {
+      ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.PORTRAIT_UP);
+    }
+  }, [isFocused]);
 
   useEffect(() => {
     requestCameraPermission();
@@ -137,8 +148,8 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   galleryButton:{
-    width: 40,
-      height: 40,
+    width: 45,
+    height: 45,
       tintColor: "#fff",
   },
   galleryButtonContainer:{

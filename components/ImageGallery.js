@@ -4,9 +4,6 @@ import {
   ScrollView,
   Image,
   Text,
-  Dimensions,
-  Button,
-  TouchableOpacity,
 } from "react-native";
 import React, { useState, useEffect } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -15,26 +12,8 @@ import ImageModal from "./ImageModal";
 import AudioController from "./AudioController";
 import ImageController from "./ImageController";
 import {widthPercentageToDP as wp, heightPercentageToDP as hp} from 'react-native-responsive-screen';
-
-
-const getImageDimensions = () => {
-  const window = Dimensions.get("window");
-  const screen = Dimensions.get("screen");
-  
-  const isPortrait = window.height > window.width;
-  const maxWidth = isPortrait ? window.width : screen.width / 1.1;
-  const maxHeight = window.height * 1;
-
-  let width = maxWidth;
-  let height = (width * 9) / 16;
-
-  if (height > maxHeight) {
-    height = maxHeight;
-    width = (height * 16) / 9;
-  }
-
-  return { width, height };
-};
+import * as ScreenOrientation from 'expo-screen-orientation';
+import { useIsFocused } from '@react-navigation/native';
 
 export default function ImageGallery() {
   const [images, setImages] = useState([]);
@@ -47,16 +26,14 @@ export default function ImageGallery() {
   const [selectedImageIndex, setSelectedImageIndex] = useState(null);
   const [weatherList, setWeatherList] = useState([]);
   const [playbackStatuses, setPlaybackStatuses] = useState({});
-  const [imageDimensions, setImageDimensions] = useState(getImageDimensions());
+
+  const isFocused = useIsFocused();
 
   useEffect(() => {
-    const subscription = Dimensions.addEventListener("change", () => {
-      setImageDimensions(getImageDimensions());
-    });
-    return () => {
-      subscription.remove();
-    };
-  }, []);
+    if (isFocused) {
+      ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.DEFAULT);
+    }
+  }, [isFocused]);
 
   const handleImagePress = (index) => {
     setSelectedImageIndex(index);
