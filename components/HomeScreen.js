@@ -30,9 +30,7 @@ export default function HomeScreen({ navigation }) {
   const [hasPermission, setHasPermission] = useState(null);
   const [type, setType] = useState(CAMERA_TYPES.BACK);
   const [flashMode, setFlashMode] = useState(FLASH_MODES.OFF);
-  const [photoUri, setPhotoUri] = useState(null);
   const cameraRef = useRef(null);
-  const [location, setLocation] = useState(null);
 
   const isFocused = useIsFocused();
 
@@ -63,21 +61,41 @@ export default function HomeScreen({ navigation }) {
       const UserLocation = await Location.getCurrentPositionAsync({
         accuracy: Location.Accuracy.Balanced,
       });
-      setLocation(UserLocation);
       const storedLocations = await AsyncStorage.getItem("locations");
       const locationList = storedLocations ? JSON.parse(storedLocations) : [];
       locationList.push({
         longitude: UserLocation.coords.longitude,
         latitude: UserLocation.coords.latitude,
-        timestamp: UserLocation.timestamp,
       });
       await AsyncStorage.setItem("locations", JSON.stringify(locationList));
-      console.log("Location saved");
       return UserLocation;
     } catch (error) {
       console.error("Error saving location:", error);
     }
   };
+
+  async function fetchLocations(location) {
+    try {
+      const response = await fetch(
+        `https://api.geoapify.com/v1/geocode/reverse?lat=${location.coords.latitude}&lon=${location.coords.longitude}&apiKey=ef258a4f141b44d9adad0793a35c674a`
+      );
+      const result = await response.json();
+      const properties = result.features[0].properties;
+      const convertedLocationList =
+        JSON.parse(await AsyncStorage.getItem("convertedLocations")) || [];
+      convertedLocationList.push({
+        address: properties.address_line1,
+        place: properties.address_line2,
+      });
+      await AsyncStorage.setItem(
+        "convertedLocations",
+        JSON.stringify(convertedLocationList)
+      );
+    } catch (error) {
+      console.error("Error fetching location:", error);
+      return { address: "Unknown", place: "Unknown" };
+    }
+  }
 
   const getCurrentWeather = async (location) => {
     try {
@@ -103,7 +121,6 @@ export default function HomeScreen({ navigation }) {
         : [];
       timestampList.push(currentDate);
       await AsyncStorage.setItem("timestamps", JSON.stringify(timestampList));
-      console.log("Timestamp saved");
     } catch (error) {
       console.error("Error saving location:", error);
     }
@@ -112,7 +129,6 @@ export default function HomeScreen({ navigation }) {
   const takePicture = async () => {
     if (cameraRef.current) {
       const photo = await cameraRef.current.takePictureAsync();
-      setPhotoUri(photo.uri);
 
       try {
         const storedImages = await AsyncStorage.getItem("images");
@@ -122,6 +138,7 @@ export default function HomeScreen({ navigation }) {
         await AsyncStorage.setItem("images", JSON.stringify(imageList));
         await saveTimestamp();
         await getCurrentWeather(await saveUserLocation());
+        await fetchLocations(await saveUserLocation());
       } catch (e) {
         console.error("Failed to save image:", e);
       }

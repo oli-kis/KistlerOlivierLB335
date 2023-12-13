@@ -1,24 +1,20 @@
-import {
-  StyleSheet,
-  View,
-  ScrollView,
-  Image,
-  Text,
-} from "react-native";
+import { StyleSheet, View, ScrollView, Image, Text } from "react-native";
 import React, { useState, useEffect } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Audio } from "expo-av";
 import ImageModal from "./ImageModal";
 import AudioController from "./AudioController";
 import ImageController from "./ImageController";
-import {widthPercentageToDP as wp, heightPercentageToDP as hp} from 'react-native-responsive-screen';
-import * as ScreenOrientation from 'expo-screen-orientation';
-import { useIsFocused } from '@react-navigation/native';
+import {
+  widthPercentageToDP as wp,
+  heightPercentageToDP as hp,
+} from "react-native-responsive-screen";
+import * as ScreenOrientation from "expo-screen-orientation";
+import { useIsFocused } from "@react-navigation/native";
 
 export default function ImageGallery() {
   const [images, setImages] = useState([]);
   const [audios, setAudios] = useState([]);
-  const [locations, setLocations] = useState([]);
   const [convertedLocations, setConvertedLocations] = useState([]);
   const [dates, setDates] = useState([]);
   const [imageModalVisible, setImageModalVisible] = useState(false);
@@ -43,23 +39,27 @@ export default function ImageGallery() {
     if (audios[index] && audios[index].sound) {
       await audios[index].sound.unloadAsync();
     }
-  
+
     const newImages = [...images];
-  newImages.splice(index, 1);
-  setImages(newImages);
+    newImages.splice(index, 1);
+    setImages(newImages);
 
-  const newAudios = [...audios];
-  newAudios.splice(index, 1);
-  setAudios(newAudios);
+    const newAudios = [...audios];
+    newAudios.splice(index, 1);
+    setAudios(newAudios);
 
-  let newPlaybackStatuses = { ...playbackStatuses };
-  delete newPlaybackStatuses[index];
-  newPlaybackStatuses = Object.keys(newPlaybackStatuses).reduce((acc, key) => {
-    const newIndex = parseInt(key) > index ? parseInt(key) - 1 : parseInt(key);
-    acc[newIndex] = newPlaybackStatuses[key];
-    return acc;
-  }, {});
-  setPlaybackStatuses(newPlaybackStatuses);
+    let newPlaybackStatuses = { ...playbackStatuses };
+    delete newPlaybackStatuses[index];
+    newPlaybackStatuses = Object.keys(newPlaybackStatuses).reduce(
+      (acc, key) => {
+        const newIndex =
+          parseInt(key) > index ? parseInt(key) - 1 : parseInt(key);
+        acc[newIndex] = newPlaybackStatuses[key];
+        return acc;
+      },
+      {}
+    );
+    setPlaybackStatuses(newPlaybackStatuses);
 
     const storedImages = await AsyncStorage.getItem("images");
     const imagesDelete = storedImages ? JSON.parse(storedImages) : [];
@@ -76,17 +76,23 @@ export default function ImageGallery() {
     timestamps.splice(index, 1);
     await AsyncStorage.setItem("timestamps", JSON.stringify(timestamps));
 
-    const storedLocations = await AsyncStorage.getItem("locations");
-    const locations = storedLocations ? JSON.parse(storedLocations) : [];
-    locations.splice(index, 1);
-    await AsyncStorage.setItem("locations", JSON.stringify(locations));
+    const storedConvertedLocations = await AsyncStorage.getItem(
+      "convertedLocations"
+    );
+    const ConvertedLocations = storedConvertedLocations
+      ? JSON.parse(storedConvertedLocations)
+      : [];
+    ConvertedLocations.splice(index, 1);
+    await AsyncStorage.setItem(
+      "convertedLocations",
+      JSON.stringify(ConvertedLocations)
+    );
 
     const storedWeather = await AsyncStorage.getItem("weather");
     const weather = storedWeather ? JSON.parse(storedWeather) : [];
     weather.splice(index, 1);
     await AsyncStorage.setItem("weather", JSON.stringify(weather));
   };
-
   useEffect(() => {
     async function fetchData() {
       await Promise.all([
@@ -94,13 +100,20 @@ export default function ImageGallery() {
         fetchAudios(),
         fetchLocations(),
         fetchWeather(),
+        fetchTimestamps(),
       ]);
       setIsDataLoaded(true);
     }
 
     fetchData();
   }, []);
-  useEffect(() => {}, [images, audios, locations, convertedLocations, dates, playbackStatuses]);
+  useEffect(() => {}, [
+    images,
+    audios,
+    convertedLocations,
+    dates,
+    playbackStatuses,
+  ]);
 
   async function fetchImages() {
     try {
@@ -165,12 +178,38 @@ export default function ImageGallery() {
     }
   }
 
+  async function fetchLocations() {
+    try {
+      const storedConvertedLocations = await AsyncStorage.getItem(
+        "convertedLocations"
+      );
+      const newConvertedLocations = storedConvertedLocations
+        ? JSON.parse(storedConvertedLocations)
+        : [];
+      setConvertedLocations(newConvertedLocations);
+    } catch (e) {
+      console.error("Failed to fetch locations:", e);
+    }
+  }
+  async function fetchTimestamps() {
+    try {
+      const timestamps = await AsyncStorage.getItem("timestamps");
+      const parsedTimestamps = timestamps ? JSON.parse(timestamps) : [];
+      setDates(parsedTimestamps);
+    } catch (error) {
+      console.error("Error fetching Timestamps: " + error);
+    }
+  }
+
   const handlePlayPause = async (index) => {
     try {
       let status;
       if (playbackStatuses[index] && playbackStatuses[index].playing) {
         status = await audios[index].sound.pauseAsync();
-      } else if (playbackStatuses[index] && playbackStatuses[index].position >= 3005) {
+      } else if (
+        playbackStatuses[index] &&
+        playbackStatuses[index].position >= 3005
+      ) {
         status = await audios[index].sound.replayAsync();
       } else {
         status = await audios[index].sound.playAsync();
@@ -182,77 +221,38 @@ export default function ImageGallery() {
   };
 
   const handlePlaybackStatusUpdate = (index, status) => {
-    try{
-    if (status.didJustFinish) {
-      const updatedStatuses = { ...playbackStatuses };
-      updatedStatuses[index] = {
-        playing: false,
-        position: 0,
-        duration: status.durationMillis,
-      };
-      setPlaybackStatuses(updatedStatuses);
-    } else {
-      updatePlaybackStatus(index, status);
-    }}
-    catch(error){
-      console.error("Error during handle Playback status" + error)
+    try {
+      if (status.didJustFinish) {
+        const updatedStatuses = { ...playbackStatuses };
+        updatedStatuses[index] = {
+          playing: false,
+          position: 0,
+          duration: status.durationMillis,
+        };
+        setPlaybackStatuses(updatedStatuses);
+      } else {
+        updatePlaybackStatus(index, status);
+      }
+    } catch (error) {
+      console.error("Error during handle Playback status" + error);
     }
   };
 
   const updatePlaybackStatus = (index, status) => {
-    try{
-    if (status.isLoaded) {
-      const updatedStatuses = { ...playbackStatuses };
-      updatedStatuses[index] = {
-        playing: status.isPlaying,
-        position: status.positionMillis,
-        duration: status.durationMillis,
-      };
-      setPlaybackStatuses(updatedStatuses);
-    }}
-    catch(error){
-      console.error("Error during update Playback status" + error)
+    try {
+      if (status.isLoaded) {
+        const updatedStatuses = { ...playbackStatuses };
+        updatedStatuses[index] = {
+          playing: status.isPlaying,
+          position: status.positionMillis,
+          duration: status.durationMillis,
+        };
+        setPlaybackStatuses(updatedStatuses);
+      }
+    } catch (error) {
+      console.error("Error during update Playback status" + error);
     }
   };
-
-  async function fetchLocations() {
-    try {
-      const storedLocations = await AsyncStorage.getItem("locations");
-      const parsedLocations = storedLocations
-        ? JSON.parse(storedLocations)
-        : [];
-      setLocations(parsedLocations);
-
-      const timestamps = await AsyncStorage.getItem("timestamps");
-      const parsedTimestamps = timestamps ? JSON.parse(timestamps) : [];
-      const datesArray = parsedTimestamps.map((timestamp) => {
-        return timestamp;
-      });
-      setDates(datesArray);
-
-      const newConvertedLocations = await Promise.all(
-        parsedLocations.map(async (location) => {
-          try {
-            const response = await fetch(
-              `https://api.geoapify.com/v1/geocode/reverse?lat=${location.latitude}&lon=${location.longitude}&apiKey=ef258a4f141b44d9adad0793a35c674a`
-            );
-            const result = await response.json();
-            const properties = result.features[0].properties;
-            return {
-              address: properties.address_line1,
-              place: properties.address_line2,
-            };
-          } catch (error) {
-            console.error("Error fetching location:", error);
-            return { address: "Unknown", place: "Unknown" };
-          }
-        })
-      );
-      setConvertedLocations(newConvertedLocations);
-    } catch (e) {
-      console.error("Failed to fetch locations:", e);
-    }
-  }
 
   function toggleImageModal() {
     setImageModalVisible(!imageModalVisible);
@@ -261,7 +261,7 @@ export default function ImageGallery() {
   if (!isDataLoaded) {
     return (
       <View style={styles.container}>
-        <Text>Loading data...</Text>
+        <Text style={styles.loadingText}>Loading data...</Text>
       </View>
     );
   }
@@ -271,19 +271,23 @@ export default function ImageGallery() {
       <ScrollView contentContainerStyle={styles.galleryContainer}>
         {images.map((image, index) => (
           <View key={`item-${index}`} style={styles.imageContainer}>
-            <ImageController index={index} handleImageDelete={handleImageDelete} handleImagePress={handleImagePress}></ImageController>
+            <ImageController
+              index={index}
+              handleImageDelete={handleImageDelete}
+              handleImagePress={handleImagePress}
+            ></ImageController>
             <Image
               key={`image-${index}`}
               source={{ uri: image }}
               style={styles.image}
             />
             <AudioController
-             key={`audio-${index}`}
-            index={index}
-            playbackStatuses={playbackStatuses}
-            audios={audios}
-            handlePlayPause={handlePlayPause}>
-            </AudioController>
+              key={`audio-${index}`}
+              index={index}
+              playbackStatuses={playbackStatuses}
+              audios={audios}
+              handlePlayPause={handlePlayPause}
+            ></AudioController>
             {selectedImageIndex !== null && (
               <ImageModal
                 imageModalVisible={imageModalVisible}
@@ -319,5 +323,8 @@ const styles = StyleSheet.create({
     width: wp("100%"),
     minHeight: wp("100%"),
     resizeMode: "contain",
+  },
+  loadingText: {
+    color: "white",
   },
 });
