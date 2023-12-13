@@ -30,6 +30,7 @@ export default function HomeScreen({ navigation }) {
   const [hasPermission, setHasPermission] = useState(null);
   const [type, setType] = useState(CAMERA_TYPES.BACK);
   const [flashMode, setFlashMode] = useState(FLASH_MODES.OFF);
+  const [isTakingPicture, setIsTakingPicture] = useState(false);
   const cameraRef = useRef(null);
 
   const isFocused = useIsFocused();
@@ -127,6 +128,7 @@ export default function HomeScreen({ navigation }) {
   };
 
   const takePicture = async () => {
+    setIsTakingPicture(true);
     if (cameraRef.current) {
       const photo = await cameraRef.current.takePictureAsync();
 
@@ -139,12 +141,19 @@ export default function HomeScreen({ navigation }) {
         await saveTimestamp();
         await getCurrentWeather(await saveUserLocation());
         await fetchLocations(await saveUserLocation());
+        setIsTakingPicture(false);
       } catch (e) {
         console.error("Failed to save image:", e);
       }
     }
     navigation.navigate("Audio Recording");
   };
+
+  const LoadingOverlay = () => (
+    <View style={styles.loadingOverlay}>
+      <Text style={styles.loadingText}>Taking Picture...</Text>
+    </View>
+  );
 
   const toggleFlash = () => {
     setFlashMode(
@@ -167,6 +176,7 @@ export default function HomeScreen({ navigation }) {
 
   return (
     <SafeAreaView style={styles.container}>
+      {isTakingPicture && <LoadingOverlay />}
       <TouchableOpacity
         style={styles.galleryButtonContainer}
         onPress={() => navigation.navigate("Gallery")}
@@ -210,5 +220,18 @@ const styles = StyleSheet.create({
     justifyContent: "flex-end",
     marginBottom: 50,
     paddingRight: 50,
+  },
+  loadingOverlay: {
+    position: "absolute",
+    zIndex: 100,
+    backgroundColor: "rgba(0, 0, 0, 0.7)",
+    width: "100%",
+    height: "100%",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  loadingText: {
+    color: "#fff",
+    fontSize: 20,
   },
 });
